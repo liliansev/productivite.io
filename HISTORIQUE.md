@@ -1,12 +1,12 @@
 # HISTORIQUE.md - productivite.io
 
-> Dernière mise à jour : 31 décembre 2025
+> Dernière mise à jour : 1er janvier 2026
 
 ---
 
 ## État actuel du projet
 
-**Score global : ~75% MVP complété**
+**Score global : ~80% MVP complété**
 
 | Composant | Statut | Notes |
 |-----------|--------|-------|
@@ -18,11 +18,44 @@
 | Algolia Search | ⚠️ Structure prête | Attente clés API |
 | UI (shadcn/ui) | ✅ Fonctionnel | Composants de base en place |
 | Sécurité | ✅ 9/10 | Rate limiting, Zod, headers |
-| Tests | ❌ Non commencé | Vitest + Playwright à configurer |
+| Tests unitaires | ✅ Configuré | Vitest + 29 tests passent |
+| Tests E2E | ❌ Non commencé | Playwright à configurer |
 
 ---
 
 ## Travail récent (dernières sessions)
+
+### Session du 1er janvier 2026
+
+#### Configuration Vitest et premiers tests
+
+**Fichiers créés :**
+- `vitest.config.ts` - Configuration Vitest avec React plugin et jsdom
+- `src/tests/setup.tsx` - Mocks globaux (Next.js, Better Auth, window APIs)
+- `src/tests/unit/lib/utils.test.ts` - 9 tests pour cn() utility
+- `src/tests/unit/components/tool-card.test.tsx` - 10 tests ToolCard
+- `src/tests/unit/components/upvote-button.test.tsx` - 11 tests UpvoteButton
+
+**Packages installés :**
+- vitest
+- @vitejs/plugin-react
+- jsdom
+- @testing-library/react
+- @testing-library/jest-dom
+- @testing-library/user-event
+
+**Scripts ajoutés :**
+```bash
+pnpm test           # Mode watch
+pnpm test:run       # Run unique
+pnpm test:coverage  # Avec coverage
+```
+
+**Résultat :** 29 tests passent
+
+**Commit :** `027b1c1` - "test: configure Vitest and add first unit tests"
+
+---
 
 ### Session du 31 décembre 2025
 
@@ -131,8 +164,8 @@ zod-to-json-schema 3.24.6 → unmet peer zod@^3.24.1
 ### Priorité haute (MVP)
 
 #### Tests (Phase 9)
-- [ ] Configurer Vitest (`vitest.config.ts`, `src/tests/setup.ts`)
-- [ ] Tests unitaires composants clés (ToolCard, UpvoteButton)
+- [x] Configurer Vitest (`vitest.config.ts`, `src/tests/setup.tsx`)
+- [x] Tests unitaires composants clés (ToolCard, UpvoteButton, utils)
 - [ ] Configurer Playwright (`playwright.config.ts`)
 - [ ] Tests E2E parcours critiques (auth, navigation, upvote)
 
