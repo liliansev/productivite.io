@@ -1,49 +1,24 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vitest/config";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [svelte({ hot: !process.env.VITEST })],
   test: {
-    // Environment
-    environment: 'jsdom',
+    include: ["src/**/*.{test,spec}.{js,ts}"],
+    environment: "jsdom",
     globals: true,
-
-    // Files
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist', '.next', 'e2e'],
-
-    // Setup
-    setupFiles: ['./src/tests/setup.tsx'],
-
-    // Coverage
+    setupFiles: ["./src/tests/setup.ts"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      reportsDirectory: './coverage',
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.{test,spec}.{ts,tsx}',
-        'src/tests/**',
-        'src/app/**/layout.tsx',
-        'src/app/**/not-found.tsx',
-        'src/payload-types.ts',
-        'src/collections/**',
-      ],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      include: ["src/lib/**/*.{ts,svelte}"],
+      exclude: ["src/lib/components/ui/**"],
     },
-
-    // Performance
-    pool: 'forks',
-    testTimeout: 10000,
-
-    // Behavior
-    clearMocks: true,
-    restoreMocks: true,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@payload-config': path.resolve(__dirname, './payload.config.ts'),
+      $lib: "/src/lib",
+      $app: "/node_modules/@sveltejs/kit/src/runtime/app",
     },
   },
-})
+});

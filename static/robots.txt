@@ -1,0 +1,12 @@
+# Robots.txt for productivite.io
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /profile
+Disallow: /submit
+
+# Sitemap
+Sitemap: https://productivite.io/sitemap.xml

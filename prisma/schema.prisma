@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Better-auth tables
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  upvotes       Upvote[]
+  reviews       Review[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// App tables
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String
+  color       String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tools       Tool[]
+}
+
+model Tool {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  tagline     String?
+  description String?  @db.Text
+  website     String?
+  pricing     Pricing  @default(FREE)
+  platforms   String[]
+  features    String[]
+  pros        String[]
+  cons        String[]
+  upvoteCount Int      @default(0)
+  status      Status   @default(DRAFT)
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  category    Category @relation(fields: [categoryId], references: [id])
+  upvotes     Upvote[]
+  reviews     Review[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([upvoteCount])
+}
+
+model Upvote {
+  id        String   @id @default(cuid())
+  toolId    String
+  userId    String
+  createdAt DateTime @default(now())
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, userId])
+  @@index([toolId])
+  @@index([userId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  toolId    String
+  userId    String
+  rating    Int
+  title     String?
+  content   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, userId])
+  @@index([toolId])
+  @@index([userId])
+}
+
+enum Pricing {
+  FREE
+  FREEMIUM
+  PAID
+  ENTERPRISE
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+}
