@@ -1,11 +1,13 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
   import * as Card from "$lib/components/ui/card";
   import * as Avatar from "$lib/components/ui/avatar";
   import { Badge } from "$lib/components/ui/badge";
   import { Separator } from "$lib/components/ui/separator";
+  import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { authClient } from "$lib/auth-client";
   import { toast } from "svelte-sonner";
   import {
@@ -17,11 +19,20 @@
     LogOut,
     Loader2,
     ExternalLink,
+    Edit3,
+    Check,
+    X,
+    Trash2,
   } from "@lucide/svelte";
 
   let { data } = $props();
   const user = $derived($page.data.user);
   let isLoggingOut = $state(false);
+  let isEditingName = $state(false);
+  let editedName = $state("");
+  let isSavingName = $state(false);
+  let isDeletingAccount = $state(false);
+  let showDeleteDialog = $state(false);
 
   function getInitials(name: string | null | undefined): string {
     if (!name) return "U";
@@ -53,6 +64,68 @@
       isLoggingOut = false;
     }
   }
+
+  function startEditName() {
+    editedName = user?.name || "";
+    isEditingName = true;
+  }
+
+  function cancelEditName() {
+    isEditingName = false;
+    editedName = "";
+  }
+
+  async function saveName() {
+    if (!editedName.trim() || editedName.trim().length < 2) {
+      toast.error("Le nom doit contenir au moins 2 caractères");
+      return;
+    }
+
+    isSavingName = true;
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editedName.trim() }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erreur lors de la mise à jour");
+      }
+
+      toast.success("Nom mis à jour");
+      isEditingName = false;
+      invalidateAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la mise à jour");
+    } finally {
+      isSavingName = false;
+    }
+  }
+
+  async function deleteAccount() {
+    isDeletingAccount = true;
+    try {
+      const response = await fetch("/api/profile", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erreur lors de la suppression");
+      }
+
+      await authClient.signOut();
+      toast.success("Votre compte a été supprimé");
+      goto("/");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la suppression");
+    } finally {
+      isDeletingAccount = false;
+      showDeleteDialog = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -77,9 +150,33 @@
           </Avatar.Root>
 
           <div class="flex-1 text-center sm:text-left">
-            <h1 class="text-2xl font-bold text-neutral-900">
-              {user?.name || "Utilisateur"}
-            </h1>
+            <div class="flex items-center justify-center sm:justify-start gap-2">
+              {#if isEditingName}
+                <Input
+                  bind:value={editedName}
+                  placeholder="Votre nom"
+                  class="max-w-[200px]"
+                  onkeydown={(e) => e.key === "Enter" && saveName()}
+                />
+                <Button variant="ghost" size="sm" onclick={saveName} disabled={isSavingName}>
+                  {#if isSavingName}
+                    <Loader2 class="h-4 w-4 animate-spin" />
+                  {:else}
+                    <Check class="h-4 w-4 text-green-600" />
+                  {/if}
+                </Button>
+                <Button variant="ghost" size="sm" onclick={cancelEditName}>
+                  <X class="h-4 w-4 text-red-600" />
+                </Button>
+              {:else}
+                <h1 class="text-2xl font-bold text-neutral-900">
+                  {user?.name || "Utilisateur"}
+                </h1>
+                <Button variant="ghost" size="sm" onclick={startEditName}>
+                  <Edit3 class="h-4 w-4 text-neutral-400" />
+                </Button>
+              {/if}
+            </div>
 
             <div class="mt-2 flex flex-col gap-2 text-sm text-neutral-600 sm:flex-row sm:gap-4">
               <span class="inline-flex items-center gap-1">
@@ -106,20 +203,22 @@
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            class="text-red-600 hover:bg-red-50 hover:text-red-700"
-            disabled={isLoggingOut}
-            onclick={handleLogout}
-          >
-            {#if isLoggingOut}
-              <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-              Déconnexion...
-            {:else}
-              <LogOut class="mr-2 h-4 w-4" />
-              Se déconnecter
-            {/if}
-          </Button>
+          <div class="flex flex-col gap-2">
+            <Button
+              variant="outline"
+              class="text-red-600 hover:bg-red-50 hover:text-red-700"
+              disabled={isLoggingOut}
+              onclick={handleLogout}
+            >
+              {#if isLoggingOut}
+                <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                Déconnexion...
+              {:else}
+                <LogOut class="mr-2 h-4 w-4" />
+                Se déconnecter
+              {/if}
+            </Button>
+          </div>
         </div>
       </Card.Content>
     </Card.Root>
@@ -251,5 +350,60 @@
         </div>
       </section>
     {/if}
+
+    <!-- Danger Zone -->
+    <Separator class="my-8" />
+
+    <section>
+      <h2 class="mb-4 text-xl font-semibold text-red-600 flex items-center gap-2">
+        <Trash2 class="h-5 w-5" />
+        Zone de danger
+      </h2>
+
+      <Card.Root class="border-red-200">
+        <Card.Content class="p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-medium text-neutral-900">Supprimer mon compte</h3>
+              <p class="text-sm text-neutral-500">
+                Cette action est irréversible. Toutes vos données seront supprimées.
+              </p>
+            </div>
+            <AlertDialog.Root bind:open={showDeleteDialog}>
+              <AlertDialog.Trigger asChild let:builder>
+                <Button
+                  variant="destructive"
+                  builders={[builder]}
+                >
+                  <Trash2 class="mr-2 h-4 w-4" />
+                  Supprimer
+                </Button>
+              </AlertDialog.Trigger>
+              <AlertDialog.Content>
+                <AlertDialog.Header>
+                  <AlertDialog.Title>Êtes-vous sûr ?</AlertDialog.Title>
+                  <AlertDialog.Description>
+                    Cette action est irréversible. Votre compte et toutes vos données (avis, upvotes) seront définitivement supprimés.
+                  </AlertDialog.Description>
+                </AlertDialog.Header>
+                <AlertDialog.Footer>
+                  <AlertDialog.Cancel>Annuler</AlertDialog.Cancel>
+                  <AlertDialog.Action
+                    class="bg-red-600 hover:bg-red-700"
+                    onclick={deleteAccount}
+                    disabled={isDeletingAccount}
+                  >
+                    {#if isDeletingAccount}
+                      <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                    {/if}
+                    Supprimer définitivement
+                  </AlertDialog.Action>
+                </AlertDialog.Footer>
+              </AlertDialog.Content>
+            </AlertDialog.Root>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    </section>
   </div>
 </div>

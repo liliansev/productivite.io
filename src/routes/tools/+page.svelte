@@ -6,7 +6,7 @@
   import { Badge } from "$lib/components/ui/badge";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { ToolCard } from "$lib/components/tools";
-  import { Search, SlidersHorizontal, X, ChevronDown } from "@lucide/svelte";
+  import { Search, SlidersHorizontal, X, ChevronDown, ChevronLeft, ChevronRight } from "@lucide/svelte";
   import type { Pricing } from "@prisma/client";
 
   let { data } = $props();
@@ -78,6 +78,8 @@
 
   function updateFilters(updates: Record<string, string>) {
     const params = new URLSearchParams($page.url.searchParams);
+    // Reset to page 1 when filters change
+    params.delete("page");
     Object.entries(updates).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
@@ -85,6 +87,16 @@
         params.delete(key);
       }
     });
+    goto(`/tools?${params.toString()}`);
+  }
+
+  function goToPage(pageNum: number) {
+    const params = new URLSearchParams($page.url.searchParams);
+    if (pageNum <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", pageNum.toString());
+    }
     goto(`/tools?${params.toString()}`);
   }
 
@@ -114,7 +126,7 @@
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-neutral-900">Outils</h1>
     <p class="mt-2 text-neutral-600">
-      {data.tools.length} outils disponibles
+      {data.pagination.totalCount} outils disponibles
     </p>
   </div>
 
@@ -257,13 +269,58 @@
       {#each data.tools as tool, i}
         <ToolCard
           {tool}
-          rank={i + 1}
+          rank={(data.pagination.page - 1) * 10 + i + 1}
           {isLoggedIn}
           upvoted={userUpvotes.has(tool.id)}
           onUpvoteChange={handleUpvoteChange}
         />
       {/each}
     </div>
+
+    <!-- Pagination -->
+    {#if data.pagination.totalPages > 1}
+      <div class="mt-8 flex items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!data.pagination.hasPrevPage}
+          onclick={() => goToPage(data.pagination.page - 1)}
+        >
+          <ChevronLeft class="h-4 w-4" />
+          Précédent
+        </Button>
+
+        <div class="flex items-center gap-1">
+          {#each Array(data.pagination.totalPages) as _, i}
+            {#if i + 1 === 1 || i + 1 === data.pagination.totalPages || (i + 1 >= data.pagination.page - 1 && i + 1 <= data.pagination.page + 1)}
+              <Button
+                variant={data.pagination.page === i + 1 ? "default" : "outline"}
+                size="sm"
+                class="w-9"
+                onclick={() => goToPage(i + 1)}
+              >
+                {i + 1}
+              </Button>
+            {:else if i + 1 === data.pagination.page - 2 || i + 1 === data.pagination.page + 2}
+              <span class="px-2 text-neutral-400">...</span>
+            {/if}
+          {/each}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!data.pagination.hasNextPage}
+          onclick={() => goToPage(data.pagination.page + 1)}
+        >
+          Suivant
+          <ChevronRight class="h-4 w-4" />
+        </Button>
+      </div>
+      <p class="mt-4 text-center text-sm text-neutral-500">
+        Page {data.pagination.page} sur {data.pagination.totalPages} ({data.pagination.totalCount} outils)
+      </p>
+    {/if}
   {:else}
     <div class="flex flex-col items-center justify-center py-16 text-center">
       <div class="mb-4 text-6xl">🔍</div>

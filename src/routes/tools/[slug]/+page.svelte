@@ -1,8 +1,11 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Separator } from "$lib/components/ui/separator";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
   import * as Avatar from "$lib/components/ui/avatar";
   import { ToolCard } from "$lib/components/tools";
   import {
@@ -16,6 +19,8 @@
     Apple,
     Globe,
     Loader2,
+    Trash2,
+    Edit3,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import type { Pricing } from "@prisma/client";
@@ -148,6 +153,111 @@
       month: "long",
       year: "numeric",
     }).format(new Date(date));
+  }
+
+  // Review form state
+  let showReviewForm = $state(false);
+  let reviewRating = $state(5);
+  let reviewTitle = $state("");
+  let reviewContent = $state("");
+  let isSubmittingReview = $state(false);
+  let editingReviewId = $state<string | null>(null);
+
+  // Check if current user has already reviewed
+  const userReview = $derived(
+    data.tool.reviews.find((r) => r.user.id === $page.data.user?.id)
+  );
+
+  function openReviewForm() {
+    if (!isLoggedIn) {
+      toast.error("Connectez-vous pour laisser un avis", {
+        action: {
+          label: "Se connecter",
+          onClick: () => goto("/login"),
+        },
+      });
+      return;
+    }
+
+    if (userReview) {
+      // Pre-fill form for editing
+      editingReviewId = userReview.id;
+      reviewRating = userReview.rating;
+      reviewTitle = userReview.title || "";
+      reviewContent = userReview.content || "";
+    } else {
+      editingReviewId = null;
+      reviewRating = 5;
+      reviewTitle = "";
+      reviewContent = "";
+    }
+    showReviewForm = true;
+  }
+
+  function closeReviewForm() {
+    showReviewForm = false;
+    editingReviewId = null;
+    reviewRating = 5;
+    reviewTitle = "";
+    reviewContent = "";
+  }
+
+  async function submitReview() {
+    if (reviewContent && reviewContent.length < 10) {
+      toast.error("Le contenu doit faire au moins 10 caractères");
+      return;
+    }
+
+    isSubmittingReview = true;
+    try {
+      const response = await fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toolId: data.tool.id,
+          rating: reviewRating,
+          title: reviewTitle || null,
+          content: reviewContent || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erreur lors de l'envoi");
+      }
+
+      const result = await response.json();
+      toast.success(result.updated ? "Avis modifié !" : "Avis publié !");
+      closeReviewForm();
+      // Refresh the page to show new review
+      goto(`/tools/${data.tool.slug}`, { invalidateAll: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de l'envoi");
+    } finally {
+      isSubmittingReview = false;
+    }
+  }
+
+  async function deleteReview(reviewId: string) {
+    if (!confirm("Voulez-vous vraiment supprimer votre avis ?")) return;
+
+    try {
+      const response = await fetch("/api/review", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erreur lors de la suppression");
+      }
+
+      toast.success("Avis supprimé");
+      goto(`/tools/${data.tool.slug}`, { invalidateAll: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la suppression");
+    }
   }
 </script>
 
@@ -307,8 +417,77 @@
       <section class="mt-8">
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-bold text-neutral-900">Avis ({data.tool._count.reviews})</h2>
-          <Button variant="outline">Laisser un avis</Button>
+          <Button variant="outline" onclick={openReviewForm}>
+            {userReview ? "Modifier mon avis" : "Laisser un avis"}
+          </Button>
         </div>
+
+        <!-- Review Form -->
+        {#if showReviewForm}
+          <div class="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
+            <h3 class="text-lg font-semibold text-neutral-900">
+              {editingReviewId ? "Modifier votre avis" : "Donnez votre avis"}
+            </h3>
+
+            <!-- Rating -->
+            <div class="mt-4">
+              <Label>Note</Label>
+              <div class="mt-2 flex items-center gap-1">
+                {#each Array(5) as _, i}
+                  <button
+                    type="button"
+                    onclick={() => reviewRating = i + 1}
+                    class="transition-transform hover:scale-110"
+                  >
+                    <Star
+                      class="h-8 w-8 cursor-pointer {i < reviewRating ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-300 hover:text-yellow-300'}"
+                    />
+                  </button>
+                {/each}
+                <span class="ml-2 text-sm text-neutral-500">{reviewRating}/5</span>
+              </div>
+            </div>
+
+            <!-- Title -->
+            <div class="mt-4">
+              <Label for="review-title">Titre (optionnel)</Label>
+              <Input
+                id="review-title"
+                bind:value={reviewTitle}
+                placeholder="Un titre pour votre avis..."
+                class="mt-1"
+              />
+            </div>
+
+            <!-- Content -->
+            <div class="mt-4">
+              <Label for="review-content">Votre avis (optionnel, min. 10 caractères)</Label>
+              <textarea
+                id="review-content"
+                bind:value={reviewContent}
+                placeholder="Partagez votre expérience avec cet outil..."
+                rows="4"
+                class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              ></textarea>
+              {#if reviewContent && reviewContent.length > 0 && reviewContent.length < 10}
+                <p class="mt-1 text-sm text-red-500">Minimum 10 caractères ({reviewContent.length}/10)</p>
+              {/if}
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-6 flex items-center gap-3">
+              <Button onclick={submitReview} disabled={isSubmittingReview}>
+                {#if isSubmittingReview}
+                  <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                {/if}
+                {editingReviewId ? "Modifier" : "Publier"}
+              </Button>
+              <Button variant="outline" onclick={closeReviewForm}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        {/if}
 
         {#if data.tool.reviews.length > 0}
           <div class="mt-6 space-y-4">
@@ -327,12 +506,22 @@
                     <div class="font-medium text-neutral-900">{review.user.name || "Utilisateur"}</div>
                     <div class="text-sm text-neutral-500">{formatDate(review.createdAt)}</div>
                   </div>
-                  <div class="ml-auto flex items-center gap-1">
-                    {#each Array(5) as _, i}
-                      <Star
-                        class="h-4 w-4 {i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-200'}"
-                      />
-                    {/each}
+                  <div class="ml-auto flex items-center gap-2">
+                    <div class="flex items-center gap-1">
+                      {#each Array(5) as _, i}
+                        <Star
+                          class="h-4 w-4 {i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-200'}"
+                        />
+                      {/each}
+                    </div>
+                    {#if review.user.id === $page.data.user?.id}
+                      <Button variant="ghost" size="sm" onclick={openReviewForm}>
+                        <Edit3 class="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" class="text-red-500 hover:text-red-600" onclick={() => deleteReview(review.id)}>
+                        <Trash2 class="h-4 w-4" />
+                      </Button>
+                    {/if}
                   </div>
                 </div>
                 {#if review.title}
@@ -344,7 +533,7 @@
               </div>
             {/each}
           </div>
-        {:else}
+        {:else if !showReviewForm}
           <div class="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center">
             <p class="text-neutral-500">Aucun avis pour le moment. Soyez le premier à donner votre avis !</p>
           </div>

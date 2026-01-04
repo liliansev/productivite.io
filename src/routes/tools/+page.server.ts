@@ -1,11 +1,14 @@
 import { prisma } from "$lib/server/prisma";
 import type { PageServerLoad } from "./$types";
 
+const ITEMS_PER_PAGE = 10;
+
 export const load: PageServerLoad = async ({ url, locals }) => {
   const query = url.searchParams.get("q") || "";
   const categorySlug = url.searchParams.get("category") || "";
   const pricing = url.searchParams.get("pricing") || "";
   const sort = url.searchParams.get("sort") || "popular";
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
 
   // Build where clause
   const where: Record<string, unknown> = {
@@ -42,9 +45,15 @@ export const load: PageServerLoad = async ({ url, locals }) => {
       orderBy = { upvoteCount: "desc" };
   }
 
+  // Get total count for pagination
+  const totalCount = await prisma.tool.count({ where });
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   const tools = await prisma.tool.findMany({
     where,
     orderBy,
+    skip: (page - 1) * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
     include: {
       category: {
         select: {
@@ -86,5 +95,12 @@ export const load: PageServerLoad = async ({ url, locals }) => {
       sort,
     },
     userUpvotes,
+    pagination: {
+      page,
+      totalPages,
+      totalCount,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
   };
 };

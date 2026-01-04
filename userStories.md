@@ -27,7 +27,7 @@
 - [x] Page `/tools` affiche tous les outils publiés
 - [x] Chaque outil affiche : nom, logo, tagline, catégorie, upvotes
 - [x] Tri par popularité / récent / alphabétique
-- [ ] Pagination ou infinite scroll
+- [x] Pagination ou infinite scroll
 
 ---
 
@@ -82,7 +82,7 @@
 
 **Critères d'acceptation :**
 - [x] Clic sur upvote → redirection vers `/login` (via toast avec bouton)
-- [ ] Clic sur "commenter" → redirection vers `/login`
+- [x] Clic sur "commenter" → redirection vers `/login`
 - [x] Clic sur "soumettre un outil" → redirection vers `/login`
 - [x] Message explicatif "Connectez-vous pour voter"
 - [ ] Après connexion, retour à la page d'origine
@@ -137,13 +137,13 @@
 **Afin de** partager mon avis
 
 **Critères d'acceptation :**
-- [ ] Zone de commentaire sur la page outil
-- [ ] Champ texte avec validation (min 10 caractères)
-- [ ] Bouton "Publier"
-- [ ] Commentaire affiché immédiatement après publication
-- [ ] Affichage : avatar, nom, date, contenu
-- [ ] Modification de son propre commentaire
-- [ ] Suppression de son propre commentaire
+- [x] Zone de commentaire sur la page outil
+- [x] Champ texte avec validation (min 10 caractères)
+- [x] Bouton "Publier"
+- [x] Commentaire affiché immédiatement après publication
+- [x] Affichage : avatar, nom, date, contenu
+- [x] Modification de son propre commentaire
+- [x] Suppression de son propre commentaire
 
 ---
 
@@ -188,8 +188,8 @@
 - [x] Sélection plateformes (checkboxes)
 - [x] Upload logo (optionnel)
 - [x] Validation des champs
-- [ ] Confirmation après soumission
-- [ ] Outil créé en statut DRAFT
+- [x] Confirmation après soumission
+- [x] Outil créé en statut DRAFT
 
 ---
 
@@ -201,11 +201,11 @@
 **Critères d'acceptation :**
 - [x] Page `/profile` accessible
 - [x] Affichage : nom, email, avatar
-- [ ] Modification du nom
+- [x] Modification du nom
 - [ ] Upload/modification de l'avatar
 - [x] Liste de mes upvotes
-- [ ] Liste de mes commentaires
-- [ ] Suppression de compte (avec confirmation)
+- [x] Liste de mes commentaires
+- [x] Suppression de compte (avec confirmation)
 
 ---
 
@@ -217,13 +217,13 @@
 **Afin de** maintenir la qualité du contenu
 
 **Critères d'acceptation :**
-- [ ] Dashboard admin `/admin`
-- [ ] Liste de tous les outils (DRAFT + PUBLISHED)
+- [x] Dashboard admin `/admin`
+- [x] Liste de tous les outils (DRAFT + PUBLISHED)
 - [ ] Création d'un outil
 - [ ] Modification de tout outil
-- [ ] Suppression d'un outil (soft delete ?)
-- [ ] Publication (DRAFT → PUBLISHED)
-- [ ] Dépublication (PUBLISHED → DRAFT)
+- [x] Suppression d'un outil (soft delete ?)
+- [x] Publication (DRAFT → PUBLISHED)
+- [x] Dépublication (PUBLISHED → DRAFT)
 
 ---
 
@@ -233,7 +233,7 @@
 **Afin d'** organiser le contenu
 
 **Critères d'acceptation :**
-- [ ] Liste des catégories dans le dashboard
+- [x] Liste des catégories dans le dashboard
 - [ ] Création d'une catégorie (nom, slug, icône, couleur)
 - [ ] Modification d'une catégorie
 - [ ] Suppression (seulement si vide)
@@ -247,11 +247,11 @@
 **Afin de** modérer la communauté
 
 **Critères d'acceptation :**
-- [ ] Liste des utilisateurs
-- [ ] Voir le profil d'un utilisateur
+- [x] Liste des utilisateurs
+- [x] Voir le profil d'un utilisateur
 - [ ] Désactiver/Bannir un utilisateur
-- [ ] Promouvoir un utilisateur en admin
-- [ ] Voir l'activité (upvotes, commentaires)
+- [x] Promouvoir un utilisateur en admin
+- [x] Voir l'activité (upvotes, commentaires)
 
 ---
 
@@ -261,7 +261,7 @@
 **Afin de** maintenir un contenu approprié
 
 **Critères d'acceptation :**
-- [ ] Liste des commentaires récents
+- [x] Liste des commentaires récents
 - [ ] Signalements visibles
 - [ ] Suppression d'un commentaire
 - [ ] Avertissement à l'utilisateur
@@ -274,9 +274,9 @@
 **Afin de** garantir la qualité
 
 **Critères d'acceptation :**
-- [ ] Liste des outils en DRAFT
+- [x] Liste des outils en DRAFT
 - [ ] Prévisualisation avant publication
-- [ ] Bouton Publier
+- [x] Bouton Publier
 - [ ] Bouton Rejeter avec motif
 - [ ] Email de notification à l'utilisateur
 
@@ -295,7 +295,7 @@
 ### US-4.2 - SEO
 - [x] Meta tags dynamiques
 - [x] Open Graph
-- [ ] Sitemap XML
+- [x] Sitemap XML
 - [ ] Schema.org (SoftwareApplication)
 - [ ] URLs canoniques
 
@@ -315,18 +315,19 @@
 - [x] Auth email/password
 - [x] Upvotes
 - [x] Soumission d'outils
+- [x] Avis/Reviews
 
 ### Phase 2 - Engagement
-- [ ] Commentaires et réponses
+- [ ] Réponses aux commentaires
 - [ ] Likes sur commentaires
-- [ ] Profil utilisateur complet
+- [x] Profil utilisateur complet
 - [ ] Notifications
 
 ### Phase 3 - Administration
-- [ ] Dashboard admin
-- [ ] Modération outils
-- [ ] Modération commentaires
-- [ ] Gestion utilisateurs
+- [x] Dashboard admin
+- [x] Modération outils
+- [x] Liste commentaires récents
+- [x] Gestion utilisateurs
 
 ### Phase 4 - Croissance
 - [ ] OAuth (Google, GitHub)

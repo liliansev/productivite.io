@@ -13,12 +13,18 @@ model User {
   name          String?
   emailVerified Boolean   @default(false)
   image         String?
+  role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
   upvotes       Upvote[]
   reviews       Review[]
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Session {
