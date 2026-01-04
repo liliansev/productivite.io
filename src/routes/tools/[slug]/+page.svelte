@@ -21,6 +21,7 @@
     Loader2,
     Trash2,
     Edit3,
+    ThumbsUp,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import type { Pricing } from "@prisma/client";
@@ -259,6 +260,62 @@
       toast.error(err instanceof Error ? err.message : "Erreur lors de la suppression");
     }
   }
+
+  // Review likes state
+  const initialLikedReviews = $derived(new Set(data.likedReviewIds));
+  let likedReviewOverrides = $state<Map<string, { liked: boolean; count: number }>>(new Map());
+
+  function getReviewLikeState(reviewId: string, originalCount: number) {
+    const override = likedReviewOverrides.get(reviewId);
+    if (override) {
+      return { liked: override.liked, count: override.count };
+    }
+    return { liked: initialLikedReviews.has(reviewId), count: originalCount };
+  }
+
+  $effect(() => {
+    const _ = data.likedReviewIds;
+    likedReviewOverrides = new Map();
+  });
+
+  async function handleReviewLike(reviewId: string, currentLiked: boolean, currentCount: number) {
+    if (!isLoggedIn) {
+      toast.error("Connectez-vous pour aimer cet avis", {
+        action: {
+          label: "Se connecter",
+          onClick: () => goto("/login"),
+        },
+      });
+      return;
+    }
+
+    // Optimistic update
+    const newLiked = !currentLiked;
+    const newCount = newLiked ? currentCount + 1 : currentCount - 1;
+    likedReviewOverrides.set(reviewId, { liked: newLiked, count: newCount });
+    likedReviewOverrides = new Map(likedReviewOverrides);
+
+    try {
+      const response = await fetch("/api/review/like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du like");
+      }
+
+      const result = await response.json();
+      likedReviewOverrides.set(reviewId, { liked: result.liked, count: result.likeCount });
+      likedReviewOverrides = new Map(likedReviewOverrides);
+    } catch {
+      // Revert on error
+      likedReviewOverrides.set(reviewId, { liked: currentLiked, count: currentCount });
+      likedReviewOverrides = new Map(likedReviewOverrides);
+      toast.error("Erreur lors du like");
+    }
+  }
 </script>
 
 <svelte:head>
@@ -492,6 +549,7 @@
         {#if data.tool.reviews.length > 0}
           <div class="mt-6 space-y-4">
             {#each data.tool.reviews as review}
+              {@const likeState = getReviewLikeState(review.id, review.likeCount)}
               <div class="rounded-xl border border-neutral-200 bg-white p-4">
                 <div class="flex items-center gap-3">
                   <Avatar.Root class="h-10 w-10">
@@ -530,6 +588,19 @@
                 {#if review.content}
                   <p class="mt-2 text-sm text-neutral-600">{review.content}</p>
                 {/if}
+                <!-- Like button -->
+                <div class="mt-3 flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="gap-1.5 text-neutral-500 hover:text-orange-600 {likeState.liked ? 'text-orange-600' : ''}"
+                    onclick={() => handleReviewLike(review.id, likeState.liked, likeState.count)}
+                  >
+                    <ThumbsUp class="h-4 w-4 {likeState.liked ? 'fill-orange-600' : ''}" />
+                    <span class="text-sm">{likeState.count}</span>
+                    <span class="text-sm">Utile</span>
+                  </Button>
+                </div>
               </div>
             {/each}
           </div>

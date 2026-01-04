@@ -20,9 +20,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: [{ likeCount: "desc" }, { createdAt: "desc" }],
       },
       _count: {
         select: {
@@ -93,11 +91,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     relatedUpvotes = upvotes.map((u) => u.toolId);
   }
 
+  // Get user likes for reviews
+  let likedReviewIds: string[] = [];
+  if (locals.user && tool.reviews.length > 0) {
+    const reviewIds = tool.reviews.map((r) => r.id);
+    const likes = await prisma.reviewLike.findMany({
+      where: {
+        userId: locals.user.id,
+        reviewId: { in: reviewIds },
+      },
+      select: { reviewId: true },
+    });
+    likedReviewIds = likes.map((l) => l.reviewId);
+  }
+
   return {
     tool,
     relatedTools,
     avgRating,
     isUpvoted,
     relatedUpvotes,
+    likedReviewIds,
   };
 };

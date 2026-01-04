@@ -167,11 +167,11 @@
 **Afin de** montrer mon accord
 
 **Critères d'acceptation :**
-- [ ] Bouton like sur chaque commentaire
-- [ ] Compteur de likes affiché
-- [ ] Toggle like/unlike
-- [ ] Un seul like par utilisateur/commentaire
-- [ ] Tri des commentaires par likes possible
+- [x] Bouton like sur chaque commentaire
+- [x] Compteur de likes affiché
+- [x] Toggle like/unlike
+- [x] Un seul like par utilisateur/commentaire
+- [x] Tri des commentaires par likes possible
 
 ---
 
