@@ -1,3 +1,5 @@
 esbuild@0.27.2
 @prisma/engines@7.2.0
 prisma@7.2.0
+esbuild@0.25.12
+msgpackr-extract@3.0.3

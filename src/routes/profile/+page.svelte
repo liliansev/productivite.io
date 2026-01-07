@@ -370,14 +370,16 @@
               </p>
             </div>
             <AlertDialog.Root bind:open={showDeleteDialog}>
-              <AlertDialog.Trigger asChild let:builder>
-                <Button
-                  variant="destructive"
-                  builders={[builder]}
-                >
-                  <Trash2 class="mr-2 h-4 w-4" />
-                  Supprimer
-                </Button>
+              <AlertDialog.Trigger>
+                {#snippet child({ props })}
+                  <Button
+                    variant="destructive"
+                    {...props}
+                  >
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Supprimer
+                  </Button>
+                {/snippet}
               </AlertDialog.Trigger>
               <AlertDialog.Content>
                 <AlertDialog.Header>
